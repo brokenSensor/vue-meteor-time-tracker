@@ -1,6 +1,8 @@
 import Vuex from 'vuex'
+import { v4 } from 'uuid'
 
 // const task = {
+//	id: 'uuid'
 // 	title: String,
 // 	description: String,
 // 	timer: 'number of seconds',
@@ -22,13 +24,16 @@ const store = new Vuex.Store({
 			return state.taskList
 		},
 		getCompletedTasks(state) {
-			return state.taskList.filter((task) => task.completed)
+			return state.taskList.filter((task) => task.completed && !task.current)
 		},
 		getUncompletedTasks(state) {
-			return state.taskList.filter((task) => !task.completed)
+			return state.taskList.filter((task) => !task.completed && !task.current)
 		},
 		getCurrentTask(state) {
-			return state.taskList[state.currentTask.index]
+			return {
+				...state.taskList[state.currentTask.index],
+				...state.currentTask,
+			}
 		},
 	},
 	mutations: {
@@ -40,7 +45,8 @@ const store = new Vuex.Store({
 		toggleTimer(state) {
 			state.currentTask.isTimerActive = !state.currentTask.isTimerActive
 		},
-		setActiveTask(state, { index }) {
+		setActiveTask(state, { id }) {
+			const index = state.taskList.findIndex((task) => task.id === id)
 			const task = state.taskList[index]
 
 			state.currentTask = {
@@ -51,12 +57,24 @@ const store = new Vuex.Store({
 
 			state.taskList[index].current = true
 		},
+		removeActiveTask(state) {
+			if (state.currentTask.index > -1) {
+				state.taskList[state.currentTask.index].current = false
+			}
+
+			state.currentTask = {
+				index: -1,
+				activeTaskTimer: 0,
+				isTimerActive: false,
+			}
+		},
 		toggleCompletionTask(state) {
 			state.taskList[state.currentTask.index].completed =
 				!state.taskList[state.currentTask.index].completed
 		},
 		addTask(state, { title, description }) {
 			state.taskList.push({
+				id: v4(),
 				title,
 				description,
 				timer: 0,
@@ -64,7 +82,7 @@ const store = new Vuex.Store({
 				current: false,
 			})
 		},
-		removeTask(state, { index }) {
+		deleteTask(state, { index }) {
 			const task = state.taskList[index]
 			if (task.current) {
 				state.currentTask = {
@@ -77,10 +95,9 @@ const store = new Vuex.Store({
 		},
 		loadState(state) {
 			const taskState = JSON.parse(localStorage.getItem('taskState'))
-			state = {
-				taskList: taskState.taskList,
-				currentTask: taskState.currentTask,
-			}
+
+			state.taskList = taskState.taskList
+			state.currentTask = taskState.currentTask
 		},
 		saveState(state) {
 			const taskState = JSON.stringify(state)
