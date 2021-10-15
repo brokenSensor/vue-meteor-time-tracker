@@ -8,6 +8,8 @@ import { v4 } from 'uuid'
 // 	timer: 'number of seconds',
 // 	completed: boolean,
 // 	current: boolean,
+// createdAt: DAte,
+// completedAt: Date
 // }
 
 const store = new Vuex.Store({
@@ -24,10 +26,14 @@ const store = new Vuex.Store({
 			return state.taskList
 		},
 		getCompletedTasks(state) {
-			return state.taskList.filter((task) => task.completed && !task.current)
+			return state.taskList
+				.filter((task) => task.completed && !task.current)
+				.sort((a, b) => b.completedAt - a.completedAt)
 		},
 		getUncompletedTasks(state) {
-			return state.taskList.filter((task) => !task.completed && !task.current)
+			return state.taskList
+				.filter((task) => !task.completed && !task.current)
+				.sort((a, b) => a.createdAt - b.createdAt)
 		},
 		getCurrentTask(state) {
 			return {
@@ -71,6 +77,11 @@ const store = new Vuex.Store({
 		toggleCompletionTask(state) {
 			state.taskList[state.currentTask.index].completed =
 				!state.taskList[state.currentTask.index].completed
+			if (state.taskList[state.currentTask.index].completed) {
+				state.taskList[state.currentTask.index].completedAt = Date.now()
+			} else {
+				state.taskList[state.currentTask.index].completedAt = null
+			}
 		},
 		addTask(state, { title, description }) {
 			state.taskList.push({
@@ -80,6 +91,8 @@ const store = new Vuex.Store({
 				timer: 0,
 				completed: false,
 				current: false,
+				createdAt: Date.now(),
+				completedAt: null,
 			})
 		},
 		deleteTask(state, { index }) {
